@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Fare Comparison</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    </style>
+</head>
+
+<body>
+
+    <div class="split-container">
+
+        <div class="form-panel">
+            <div class="glass-card">
+
+                <div class="header">
+                    <h1>Compare Ride Prices</h1>
+                    <p>Find the best fare across platforms instantly</p>
+                </div>
+
+                <form id="fareForm">
+
+                    <div class="input-group">
+                        <i class="fa-solid fa-road"></i>
+                        <input type="number" id="distance" placeholder="Distance (km)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fa-regular fa-clock"></i>
+                        <input type="number" id="duration" placeholder="Duration (minutes)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fa-solid fa-car-side"></i>
+                        <select id="vehicle_type">
+                            <option value="Budget">Budget</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Premium">Premium</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fa-solid fa-user-group"></i>
+                        <input type="number" id="num_passengers" placeholder="Passengers" min="1" required>
+                    </div>
+
+                    <button type="submit" id="predictBtn" class="btn-premium">
+                        Compare Prices
+                    </button>
+
+                </form>
+
+            </div>
+        </div>
+
+        <!-- RIGHT: IMAGE PANEL -->
+        <div class="image-panel">
+            <div class="overlay-text">
+                <h1>Smart Ride Decisions</h1>
+                <p>Compare OLA, inDrive, Uber & more in seconds</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

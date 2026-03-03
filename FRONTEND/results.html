@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ride Comparison Dashboard</title>
+    <link rel="stylesheet" href="results.css">
+</head>
+
+<body class="rc-page-wrapper">
+
+    <div class="rc-layout-container">
+        
+        <div class="rc-page-centerer">
+            <div class="rc-card">
+
+                <div class="rc-card__header">
+                    <div class="rc-title-row">
+                        <h1 class="rc-card__title">Best Ride for Your Trip</h1>
+                        <span class="rc-car-icon" role="img" aria-label="car">🚗</span>
+                    </div>
+                    <p class="rc-card__subtitle">
+                        We compared fares across platforms in real-time
+                    </p>
+                </div>
+
+                <div class="rc-list-container" id="rcResultsContainer">
+                </div>
+
+                <div class="rc-card__footer">
+                    <button class="rc-btn-compare" onclick="goBack()">
+                        Compare Again
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- IMAGE COLUMN -->
+        <div class="rc-image-column">
+            <div class="rc-image-overlay"></div>
+            <img src="hero.png" 
+                 alt="Mobile App Map Preview" 
+                 class="rc-feature-image">
+        </div>
+
+    </div>
+    <script src="results.js"></script>
+
+</body>
+</html>

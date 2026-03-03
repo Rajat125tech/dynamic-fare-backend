@@ -1,0 +1,323 @@
+/*
+Ride Comparison UI Styles
+Used prefix: .rc-
+*/
+
+.rc-page-wrapper {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background: linear-gradient(135deg, #3858a2, #020617);
+    color: white;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; 
+}
+
+.rc-layout-container {
+    display: flex;
+    align-items: stretch; 
+    justify-content: center;
+    gap: 40px; 
+    max-width: 1400px; 
+    width: 100%;
+    padding: 20px; 
+}
+
+.rc-page-centerer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px; 
+    flex: 1; 
+    max-width: 1120px; 
+}
+
+.rc-card {
+    background: linear-gradient(to bottom right, #001f11, #0c111e);
+    width: 100%;
+    border-radius: 20px;
+    padding: 30px; /* Scaled down from 40px */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.rc-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* 4. Card Header */
+.rc-card__header {
+    margin-bottom: 25px; 
+}
+
+.rc-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.rc-card__title {
+    font-size: 24px; /* Scaled down slightly */
+    font-weight: 700;
+    margin: 0;
+}
+
+.rc-car-icon {
+    font-size: 28px;
+}
+
+.rc-card__subtitle {
+    font-size: 14px; 
+    color: #a0aec0;
+    margin: 0;
+}
+
+/* 5. Service List Container */
+.rc-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Scaled down from 15px */
+    margin-bottom: 25px; 
+}
+
+/* 6. Animations for List Items */
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.rc-list-item {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px; /* Scaled down from 20px */
+    display: flex;
+    align-items: center;
+    gap: 16px; 
+    
+    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    z-index: 1;
+    opacity: 1;
+    animation: slideUpFade 0.6s ease forwards;
+}
+
+.rc-list-item:nth-child(1) { animation-delay: 0.2s; }
+.rc-list-item:nth-child(2) { animation-delay: 0.6s; }
+.rc-list-item:nth-child(3) { animation-delay: 1.0s; }
+.rc-list-item:nth-child(4) { animation-delay: 1.4s; }
+
+.rc-list-item--highlight {
+    background-color: rgba(0, 255, 127, 0.05);
+    border-color: rgba(0, 255, 127, 0.15);
+}
+
+.rc-list-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.03); 
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.15); 
+    z-index: 10; 
+    cursor: default;
+}
+
+.rc-list-item--highlight:hover {
+    background-color: rgba(0, 255, 127, 0.08);
+    border-color: rgba(0, 255, 127, 0.5);
+    transform: scale(1.03); 
+    box-shadow: 0 0 25px rgba(0, 255, 127, 0.3); 
+    z-index: 10;
+}
+
+/* 7. Item Details & Pricing */
+.rc-item__logo-container {
+    width: 50px; /* Scaled down from 60px */
+    height: 50px; 
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+}
+
+.rc-item__logo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.rc-item__info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rc-item__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.rc-item__name {
+    font-size: 15px; 
+    font-weight: 600;
+}
+
+.rc-item__type {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffca28;
+    text-transform: uppercase;
+}
+
+.rc-item__price {
+    font-size: 18px; 
+    font-weight: 700;
+}
+
+/* 8. Action Buttons */
+.rc-item__actions {
+    margin-left: auto;
+}
+
+.rc-btn-book {
+    text-decoration: none;
+    background: linear-gradient(135deg, #3b82f6, #2563eb); /* Your Blue */
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 20px; /* Scaled down */
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.rc-btn-book:hover {
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+}
+
+.rc-btn-book:active {
+    transform: scale(0.98);
+}
+
+.rc-arrow {
+    font-size: 15px;
+}
+
+/* 9. Card Footer & 'Compare Again' Button */
+.rc-card__footer {
+    text-align: center;
+}
+
+.rc-btn-compare {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9); /* Your Purple */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 100%;
+    padding: 15px; /* Scaled down */
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 15px rgba(109, 40, 217, 0.3);
+}
+
+.rc-btn-compare:hover {
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(109, 40, 217, 0.5);
+}
+
+.rc-btn-compare:active {
+    transform: translateY(0);
+}
+
+/* 10. Chrome Badge */
+.rc-chrome-badge {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+/* 11. Cinematic Right Column Image Styles */
+.rc-image-column {
+    flex: 1;
+    position: relative; 
+    border-radius: 20px; 
+    overflow: hidden; 
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    animation: slideUpFade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: 0.8s; 
+}
+
+/* Dark Gradient Overlay to blend with the background */
+.rc-image-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top, 
+        rgba(15, 23, 42, 0.95) 0%, 
+        rgba(15, 23, 42, 0.2) 40%, 
+        transparent 100%
+    );
+    z-index: 2;
+    pointer-events: none; 
+}
+
+.rc-feature-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+    z-index: 1;
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rc-image-column:hover .rc-feature-image {
+    transform: scale(1.04);
+}
+
+/* 12. Responsive Design */
+@media (max-width: 1100px) {
+    .rc-layout-container {
+        flex-direction: column;
+        align-items: center; 
+        gap: 50px;
+    }
+    
+    .rc-image-column {
+        width: 100%;
+        max-width: 520px; /* Matches the new card width */
+        height: 500px; 
+        flex: none; 
+    }
+}
+
+.rc-list-item {
+    opacity: 1 !important;
+}
