@@ -23,17 +23,21 @@ app.add_middleware(
 )
 
 # -----------------------------
-# LOCAL MODELS (SMALL)
+# GLOBAL MODEL HOLDERS (Lazy)
 # -----------------------------
+ola_model = None
+indrive_model = None
+rapido_model = None
+uber_model = None
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-ola_model = joblib.load(os.path.join(BASE_DIR, "Models", "ola_model_v3.pkl"))
-indrive_model = joblib.load(os.path.join(BASE_DIR, "Models", "indrive_model_v2.pkl"))
-
-# -----------------------------
-# HUGGINGFACE CONFIG
-# -----------------------------
 REPO_ID = "Rajat-10/ride-fare-models"
+
+# -----------------------------
+# MODEL LOADERS
+# -----------------------------
+def load_local_model(path):
+    return joblib.load(path)
 
 def load_hf_model(filename):
     model_path = hf_hub_download(
@@ -43,9 +47,28 @@ def load_hf_model(filename):
     )
     return joblib.load(model_path)
 
-# Lazy-loaded models (IMPORTANT)
-rapido_model = None
-uber_model = None
+def ensure_models_loaded():
+    global ola_model, indrive_model, rapido_model, uber_model
+
+    if ola_model is None:
+        print("Loading OLA model...")
+        ola_model = load_local_model(
+            os.path.join(BASE_DIR, "Models", "ola_model_v3.pkl")
+        )
+
+    if indrive_model is None:
+        print("Loading inDrive model...")
+        indrive_model = load_local_model(
+            os.path.join(BASE_DIR, "Models", "indrive_model_v2.pkl")
+        )
+
+    if rapido_model is None:
+        print("Loading Rapido model...")
+        rapido_model = load_hf_model("rapido_model.pkl")
+
+    if uber_model is None:
+        print("Loading Uber model...")
+        uber_model = load_hf_model("uber_model.pkl")
 
 # -----------------------------
 # REQUEST SCHEMA
@@ -156,16 +179,7 @@ prediction_cache = {}
 @app.post("/predict")
 def predict_fare(data: RideRequest, request: Request):
 
-    global rapido_model, uber_model
-
-    # Lazy load large models safely
-    if rapido_model is None:
-        print("Loading Rapido model...")
-        rapido_model = load_hf_model("rapido_model.pkl")
-
-    if uber_model is None:
-        print("Loading Uber model...")
-        uber_model = load_hf_model("uber_model.pkl")
+    ensure_models_loaded()
 
     client_ip = request.client.host
     current_time = time.time()
@@ -196,33 +210,31 @@ def predict_fare(data: RideRequest, request: Request):
         cached["cache_hit"] = True
         return cached
 
-    # ---------------- OLA ----------------
+    # -------- OLA --------
     features_ola = features.copy()
-    features_ola["distance"] = features["distance"] * 0.621371
+    features_ola["distance"] *= 0.621371
 
     input_df_ola = pd.DataFrame([features_ola])
-    ola_price = ola_model.predict(input_df_ola)[0]
+    ola_price = float(ola_model.predict(input_df_ola)[0])
 
     USD_TO_INR = 83
-    ola_price *= USD_TO_INR
-
     BASE_US_PRICE_PER_KM = 2.2
     BASE_IN_PRICE_PER_KM = 18
     scaling_factor = BASE_IN_PRICE_PER_KM / (BASE_US_PRICE_PER_KM * 83)
-    ola_price *= scaling_factor
 
-    # ---------------- inDrive ----------------
+    ola_price *= USD_TO_INR * scaling_factor
+
+    # -------- inDrive --------
     indrive_vehicle = map_vehicle("indrive", data.vehicle_type)
 
     features_indrive = features.copy()
     features_indrive["vehicle_type"] = indrive_vehicle
 
     input_df_indrive = pd.DataFrame([features_indrive])
-    indrive_price = indrive_model.predict(input_df_indrive)[0]
-    indrive_price *= USD_TO_INR
-    indrive_price *= scaling_factor
+    indrive_price = float(indrive_model.predict(input_df_indrive)[0])
+    indrive_price *= USD_TO_INR * scaling_factor
 
-    # ---------------- Rapido ----------------
+    # -------- Rapido --------
     rapido_vehicle = map_vehicle("rapido", data.vehicle_type)
 
     input_df_rapido = pd.DataFrame([{
@@ -233,9 +245,9 @@ def predict_fare(data: RideRequest, request: Request):
         "traffic": features["traffic"]
     }])
 
-    rapido_price = rapido_model.predict(input_df_rapido)[0]
+    rapido_price = float(rapido_model.predict(input_df_rapido)[0])
 
-    # ---------------- Uber ----------------
+    # -------- Uber --------
     uber_vehicle = map_vehicle("uber", data.vehicle_type)
 
     input_df_uber = pd.DataFrame([{
@@ -246,13 +258,13 @@ def predict_fare(data: RideRequest, request: Request):
         "traffic": features["traffic"]
     }])
 
-    uber_price = uber_model.predict(input_df_uber)[0]
+    uber_price = float(uber_model.predict(input_df_uber)[0])
 
     response = {
-        "ola_price": round(float(ola_price), 2),
-        "indrive_price": round(float(indrive_price), 2),
-        "rapido_price": round(float(rapido_price), 2),
-        "uber_price": round(float(uber_price), 2),
+        "ola_price": round(ola_price, 2),
+        "indrive_price": round(indrive_price, 2),
+        "rapido_price": round(rapido_price, 2),
+        "uber_price": round(uber_price, 2),
         "computed_hour": features["hour"],
         "computed_traffic": features["traffic"],
         "computed_surge": features["surge"],
