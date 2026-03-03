@@ -11,6 +11,9 @@ import requests
 
 app = FastAPI()
 
+# -----------------------------
+# CORS CONFIG
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,11 +22,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -----------------------------
+# LOCAL MODELS (SMALL)
+# -----------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ola_model = joblib.load(os.path.join(BASE_DIR, "Models", "ola_model_v3.pkl"))
 indrive_model = joblib.load(os.path.join(BASE_DIR, "Models", "indrive_model_v2.pkl"))
 
+# -----------------------------
+# HUGGINGFACE CONFIG
+# -----------------------------
+REPO_ID = "Rajat-10/ride-fare-models"
+
+def load_hf_model(filename):
+    model_path = hf_hub_download(
+        repo_id=REPO_ID,
+        filename=filename,
+        cache_dir="./models"
+    )
+    return joblib.load(model_path)
+
+# Lazy-loaded models (IMPORTANT)
+rapido_model = None
+uber_model = None
+
+# -----------------------------
+# REQUEST SCHEMA
+# -----------------------------
 class RideRequest(BaseModel):
     distance: float
     duration: float
@@ -32,30 +58,9 @@ class RideRequest(BaseModel):
     latitude: float
     longitude: float
 
-REPO_ID = "Rajat-10/ride-fare-models"
-
-def load_hf_model(filename):
-    model_path = hf_hub_download(
-        repo_id=REPO_ID,
-        filename=filename,
-        cache_dir="./models"  # saves locally after first download
-    )
-    return joblib.load(model_path)
-
-rapido_model = None
-uber_model = None
-
-@app.on_event("startup")
-def load_large_models():
-    global rapido_model, uber_model
-
-    print("Loading large models from HuggingFace...")
-    rapido_model = load_hf_model("rapido_model.pkl")
-    uber_model = load_hf_model("uber_model.pkl")
-    print("Large models loaded successfully!")
-
-
-
+# -----------------------------
+# WEATHER FETCH
+# -----------------------------
 def fetch_weather(latitude: float, longitude: float):
     try:
         url = (
@@ -69,7 +74,6 @@ def fetch_weather(latitude: float, longitude: float):
         data = response.json()
         weather_code = data.get("current_weather", {}).get("weathercode", 0)
 
-        # Map Open-Meteo weather codes → model-compatible strings
         if weather_code <= 3:
             return "clear"
         elif 45 <= weather_code <= 48:
@@ -82,7 +86,8 @@ def fetch_weather(latitude: float, longitude: float):
             return "cloudy"
 
     except Exception:
-        return "clear"  # safe fallback
+        return "clear"
+
 # -----------------------------
 # FEATURE GENERATION
 # -----------------------------
@@ -103,9 +108,6 @@ def generate_features(data: RideRequest):
     surge = 1.3 if traffic == "high" else 1.0
     weather = fetch_weather(data.latitude, data.longitude)
 
-    print("DEBUG WEATHER:", weather)
-    print("DEBUG LAT/LON:", data.latitude, data.longitude)
-    
     return {
         "distance": data.distance,
         "duration": data.duration,
@@ -117,9 +119,8 @@ def generate_features(data: RideRequest):
         "num_passengers": data.num_passengers
     }
 
-
 # -----------------------------
-# VEHICLE MAPPING LAYER
+# VEHICLE MAPPING
 # -----------------------------
 def map_vehicle(platform, tier):
     mapping = {
@@ -141,7 +142,6 @@ def map_vehicle(platform, tier):
     }
     return mapping[platform][tier]
 
-
 # -----------------------------
 # RATE LIMITER
 # -----------------------------
@@ -150,12 +150,22 @@ REFILL_TIME = 60
 token_buckets = {}
 prediction_cache = {}
 
-
 # -----------------------------
 # PREDICTION ENDPOINT
 # -----------------------------
 @app.post("/predict")
 def predict_fare(data: RideRequest, request: Request):
+
+    global rapido_model, uber_model
+
+    # Lazy load large models safely
+    if rapido_model is None:
+        print("Loading Rapido model...")
+        rapido_model = load_hf_model("rapido_model.pkl")
+
+    if uber_model is None:
+        print("Loading Uber model...")
+        uber_model = load_hf_model("uber_model.pkl")
 
     client_ip = request.client.host
     current_time = time.time()
@@ -186,28 +196,22 @@ def predict_fare(data: RideRequest, request: Request):
         cached["cache_hit"] = True
         return cached
 
-    # -----------------------------
-    # OLA (NYC-based model)
-    # -----------------------------
+    # ---------------- OLA ----------------
     features_ola = features.copy()
-    features_ola["distance"] = features["distance"] * 0.621371  # km → miles
+    features_ola["distance"] = features["distance"] * 0.621371
 
     input_df_ola = pd.DataFrame([features_ola])
     ola_price = ola_model.predict(input_df_ola)[0]
 
-    # USD → INR
     USD_TO_INR = 83
     ola_price *= USD_TO_INR
 
-    # India scaling normalization
     BASE_US_PRICE_PER_KM = 2.2
     BASE_IN_PRICE_PER_KM = 18
     scaling_factor = BASE_IN_PRICE_PER_KM / (BASE_US_PRICE_PER_KM * 83)
     ola_price *= scaling_factor
 
-    # -----------------------------
-    # inDrive (NYC-based)
-    # -----------------------------
+    # ---------------- inDrive ----------------
     indrive_vehicle = map_vehicle("indrive", data.vehicle_type)
 
     features_indrive = features.copy()
@@ -215,13 +219,10 @@ def predict_fare(data: RideRequest, request: Request):
 
     input_df_indrive = pd.DataFrame([features_indrive])
     indrive_price = indrive_model.predict(input_df_indrive)[0]
-
     indrive_price *= USD_TO_INR
     indrive_price *= scaling_factor
 
-    # -----------------------------
-    # Rapido (India-native)
-    # -----------------------------
+    # ---------------- Rapido ----------------
     rapido_vehicle = map_vehicle("rapido", data.vehicle_type)
 
     input_df_rapido = pd.DataFrame([{
@@ -234,9 +235,7 @@ def predict_fare(data: RideRequest, request: Request):
 
     rapido_price = rapido_model.predict(input_df_rapido)[0]
 
-    # -----------------------------
-    # Uber (India-native)
-    # -----------------------------
+    # ---------------- Uber ----------------
     uber_vehicle = map_vehicle("uber", data.vehicle_type)
 
     input_df_uber = pd.DataFrame([{
