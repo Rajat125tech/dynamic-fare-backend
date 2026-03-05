@@ -16,7 +16,7 @@ app = FastAPI()
 # -----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rajat-dynamic-fare.vercel.app",],
+    allow_origins=["*",],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,7 +31,7 @@ rapido_model = None
 uber_model = None
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO_ID = "Rajat-10/ride-fare-models"
+REPO_ID = "Rajat-10/ride-fare-models-2"
 
 # -----------------------------
 # MODEL LOADERS
@@ -49,18 +49,14 @@ def load_hf_model(filename):
 
 def ensure_models_loaded():
     global ola_model, indrive_model, rapido_model, uber_model
-
+    
     if ola_model is None:
         print("Loading OLA model...")
-        ola_model = load_local_model(
-            os.path.join(BASE_DIR, "Models", "ola_model_v3.pkl")
-        )
+        ola_model = load_hf_model("ola_model_v3.pkl")
 
     if indrive_model is None:
         print("Loading inDrive model...")
-        indrive_model = load_local_model(
-            os.path.join(BASE_DIR, "Models", "indrive_model_v2.pkl")
-        )
+        indrive_model = load_hf_model("indrive_model_v2.pkl")
 
     if rapido_model is None:
         print("Loading Rapido model...")
@@ -70,9 +66,8 @@ def ensure_models_loaded():
         print("Loading Uber model...")
         uber_model = load_hf_model("uber_model.pkl")
 
-# -----------------------------
-# REQUEST SCHEMA
-# -----------------------------
+
+
 class RideRequest(BaseModel):
     distance: float
     duration: float
@@ -98,22 +93,19 @@ def fetch_weather(latitude: float, longitude: float):
         weather_code = data.get("current_weather", {}).get("weathercode", 0)
 
         if weather_code <= 3:
-            return "clear"
+            return "Clear"
         elif 45 <= weather_code <= 48:
-            return "fog"
+            return "Foggy"
         elif 51 <= weather_code <= 67:
-            return "rain"
+            return "Rainy"
         elif 71 <= weather_code <= 77:
-            return "snow"
+            return "Snowy"
         else:
-            return "cloudy"
+            return "Clear"
 
     except Exception:
-        return "clear"
+        return "Clear"
 
-# -----------------------------
-# FEATURE GENERATION
-# -----------------------------
 def generate_features(data: RideRequest):
 
     now = datetime.now()
@@ -122,13 +114,13 @@ def generate_features(data: RideRequest):
     is_weekend = 1 if now.weekday() >= 5 else 0
 
     if 7 <= hour <= 10 or 17 <= hour <= 20:
-        traffic = "high"
+        traffic = "High"
     elif 11 <= hour <= 16:
-        traffic = "medium"
+        traffic = "Medium"
     else:
-        traffic = "low"
+        traffic = "Low"
 
-    surge = 1.3 if traffic == "high" else 1.0
+    surge = 1.3 if traffic == "High" else 1.0
     weather = fetch_weather(data.latitude, data.longitude)
 
     return {
@@ -227,22 +219,36 @@ def predict_fare(data: RideRequest, request: Request):
     # -------- inDrive --------
     indrive_vehicle = map_vehicle("indrive", data.vehicle_type)
 
-    features_indrive = features.copy()
-    features_indrive["vehicle_type"] = indrive_vehicle
+    features_indrive = {
+        "distance": features["distance"],
+        "duration": features["duration"],
+        "vehicle_type": indrive_vehicle,
+        "weather": features["weather"],
+        "traffic": features["traffic"],
+        "surge": "Yes" if features["surge"] > 1 else "No",
+        "hour": features["hour"],
+        "is_weekend": features["is_weekend"]
+    }
 
     input_df_indrive = pd.DataFrame([features_indrive])
     indrive_price = float(indrive_model.predict(input_df_indrive)[0])
     indrive_price *= USD_TO_INR * scaling_factor
 
+    print("inDrive categories:", indrive_model.named_steps["preprocessor"].transformers_[0][1].categories_)
+
+    # -------- Rapido --------
     # -------- Rapido --------
     rapido_vehicle = map_vehicle("rapido", data.vehicle_type)
 
     input_df_rapido = pd.DataFrame([{
         "distance": data.distance,
-        "surge": features["surge"],
+        "duration": data.duration,
         "vehicle_type": rapido_vehicle,
         "weather": features["weather"],
-        "traffic": features["traffic"]
+        "traffic": features["traffic"],
+        "surge": features["surge"],
+        "hour": features["hour"],
+        "is_weekend": features["is_weekend"]
     }])
 
     rapido_price = float(rapido_model.predict(input_df_rapido)[0])
@@ -252,10 +258,13 @@ def predict_fare(data: RideRequest, request: Request):
 
     input_df_uber = pd.DataFrame([{
         "distance": data.distance,
-        "surge": features["surge"],
+        "duration": data.duration,
         "vehicle_type": uber_vehicle,
         "weather": features["weather"],
-        "traffic": features["traffic"]
+        "traffic": features["traffic"],
+        "surge": features["surge"],
+        "hour": features["hour"],
+        "is_weekend": features["is_weekend"]
     }])
 
     uber_price = float(uber_model.predict(input_df_uber)[0])
