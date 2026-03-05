@@ -2,6 +2,7 @@
 *.pkl
 Models/
 models/
+Training/*.csv
 
 # Python
 __pycache__/
