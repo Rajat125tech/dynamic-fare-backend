@@ -174,7 +174,7 @@ def predict_fare(data: RideRequest, request: Request):
     
     features = generate_features(data)
 
-    features["distance"] = round(features["distance"], 1  #this will ensure rounding, like 4.7 and then 4.71 hit consider hoga
+    features["distance"] = round(features["distance"], 1) #this will ensure rounding, like 4.7 and then 4.71 hit consider hoga
     features["duration"] = round(features["duration"], 1)
 
     
