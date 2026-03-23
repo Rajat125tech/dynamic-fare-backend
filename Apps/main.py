@@ -10,10 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import requests
 
 app = FastAPI()
-
-# -----------------------------
-# CORS CONFIG
-# -----------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*",],
@@ -22,9 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -----------------------------
-# GLOBAL MODEL HOLDERS (Lazy)
-# -----------------------------
 ola_model = None
 indrive_model = None
 rapido_model = None
@@ -33,9 +26,6 @@ uber_model = None
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO_ID = "Rajat-10/ride-fare-models-2"
 
-# -----------------------------
-# MODEL LOADERS
-# -----------------------------
 def load_local_model(path):
     return joblib.load(path)
 
@@ -67,7 +57,6 @@ def ensure_models_loaded():
         uber_model = load_hf_model("uber_model.pkl")
 
 
-
 class RideRequest(BaseModel):
     distance: float
     duration: float
@@ -76,9 +65,6 @@ class RideRequest(BaseModel):
     latitude: float
     longitude: float
 
-# -----------------------------
-# WEATHER FETCH
-# -----------------------------
 def fetch_weather(latitude: float, longitude: float):
     try:
         url = (
@@ -134,9 +120,6 @@ def generate_features(data: RideRequest):
         "num_passengers": data.num_passengers
     }
 
-# -----------------------------
-# VEHICLE MAPPING
-# -----------------------------
 def map_vehicle(platform, tier):
     mapping = {
         "rapido": {
@@ -156,18 +139,12 @@ def map_vehicle(platform, tier):
         }
     }
     return mapping[platform][tier]
-
-# -----------------------------
-# RATE LIMITER
-# -----------------------------
+    
 RATE_LIMIT = 5
 REFILL_TIME = 60
 token_buckets = {}
 prediction_cache = {}
 
-# -----------------------------
-# PREDICTION ENDPOINT
-# -----------------------------
 @app.post("/predict")
 def predict_fare(data: RideRequest, request: Request):
 
@@ -202,7 +179,6 @@ def predict_fare(data: RideRequest, request: Request):
         cached["cache_hit"] = True
         return cached
 
-    # -------- OLA --------
     features_ola = features.copy()
     features_ola["distance"] *= 0.621371
 
@@ -236,7 +212,6 @@ def predict_fare(data: RideRequest, request: Request):
 
     print("inDrive categories:", indrive_model.named_steps["preprocessor"].transformers_[0][1].categories_)
 
-    # -------- Rapido --------
     # -------- Rapido --------
     rapido_vehicle = map_vehicle("rapido", data.vehicle_type)
 
