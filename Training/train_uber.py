@@ -9,12 +9,9 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Load dataset
 df = pd.read_csv("uber.csv")
 
 print("Columns:", df.columns.tolist())
-
-# Ensure numeric columns
 df["distance"] = pd.to_numeric(df["distance"], errors="coerce")
 df["duration"] = pd.to_numeric(df["duration"], errors="coerce")
 df["surge"] = pd.to_numeric(df["surge"], errors="coerce")
@@ -72,8 +69,6 @@ print("\n----- UBER MODEL PERFORMANCE -----")
 print("MAE :", round(mean_absolute_error(y_test, y_pred), 2))
 print("RMSE:", round(np.sqrt(mean_squared_error(y_test, y_pred)), 2))
 print("R2  :", round(r2_score(y_test, y_pred), 4))
-
-# Save model
 joblib.dump(model, "../Models/uber_model.pkl")
 
 print("\nUber model saved successfully.")
