@@ -145,6 +145,11 @@ REFILL_TIME = 60
 token_buckets = {}
 prediction_cache = {}
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.post("/predict")
 def predict_fare(data: RideRequest, request: Request):
 
