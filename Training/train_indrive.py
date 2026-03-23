@@ -9,17 +9,11 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# -----------------------------
-# LOAD DATA
-# -----------------------------
 df = pd.read_csv("clean_indrive.csv")
 
 print("Columns:", df.columns.tolist())
 print("Initial rows:", len(df))
 
-# -----------------------------
-# CLEAN NUMERIC COLUMNS
-# -----------------------------
 numeric_cols = [
     "distance",
     "duration",
@@ -35,16 +29,13 @@ df = df.dropna(subset=["distance", "duration", "fare"])
 
 print("Rows after cleaning:", len(df))
 
-# -----------------------------
-# FEATURES
-# -----------------------------
 FEATURES = [
     "distance",
     "duration",
     "vehicle_type",
     "weather",
     "traffic",
-    "surge",          # keep as categorical
+    "surge",          
     "hour",
     "is_weekend"
 ]
@@ -82,10 +73,6 @@ model = Pipeline(steps=[
         random_state=42
     ))
 ])
-
-# -----------------------------
-# TRAIN TEST SPLIT
-# -----------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
@@ -95,9 +82,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 model.fit(X_train, y_train)
 
-# -----------------------------
-# EVALUATION
-# -----------------------------
 y_pred = model.predict(X_test)
 
 print("\n----- INDRIVE MODEL PERFORMANCE -----")
@@ -105,9 +89,5 @@ print("MAE  :", round(mean_absolute_error(y_test, y_pred), 2))
 print("RMSE :", round(np.sqrt(mean_squared_error(y_test, y_pred)), 2))
 print("R2   :", round(r2_score(y_test, y_pred), 4))
 
-# -----------------------------
-# SAVE MODEL
-# -----------------------------
 joblib.dump(model, "../Models/indrive_model_v2.pkl")
-
 print("\nInDrive model saved successfully.")
