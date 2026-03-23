@@ -92,7 +92,7 @@ def fetch_weather(latitude: float, longitude: float):
     except Exception:
         return "Clear"
 
-def generate_features(data: RideRequest):    //this is the feature engineering part
+def generate_features(data: RideRequest):    #this is the feature engineering part
 
     now = datetime.now()
 
