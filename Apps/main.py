@@ -171,7 +171,14 @@ def predict_fare(data: RideRequest, request: Request):
 
     bucket["tokens"] -= 1
 
+    
     features = generate_features(data)
+
+    features["distance"] = round(features["distance"], 1  #this will ensure rounding, like 4.7 and then 4.71 hit consider hoga
+    features["duration"] = round(features["duration"], 1)
+
+    
+    # CACHE KEY
     cache_key = tuple(sorted({**features, "tier": data.vehicle_type}.items()))
 
     if cache_key in prediction_cache:
@@ -179,6 +186,7 @@ def predict_fare(data: RideRequest, request: Request):
         cached["cache_hit"] = True
         return cached
 
+    # OLA
     features_ola = features.copy()
     features_ola["distance"] *= 0.621371
 
@@ -192,7 +200,7 @@ def predict_fare(data: RideRequest, request: Request):
 
     ola_price *= USD_TO_INR * scaling_factor
 
-    # -------- inDrive --------
+    # INDRIVE
     indrive_vehicle = map_vehicle("indrive", data.vehicle_type)
 
     features_indrive = {
@@ -211,13 +219,12 @@ def predict_fare(data: RideRequest, request: Request):
     indrive_price *= USD_TO_INR * scaling_factor
 
     print("inDrive categories:", indrive_model.named_steps["preprocessor"].transformers_[0][1].categories_)
-
-    # -------- Rapido --------
+    # RAPIDO
     rapido_vehicle = map_vehicle("rapido", data.vehicle_type)
 
     input_df_rapido = pd.DataFrame([{
-        "distance": data.distance,
-        "duration": data.duration,
+        "distance": features["distance"],
+        "duration": features["duration"],
         "vehicle_type": rapido_vehicle,
         "weather": features["weather"],
         "traffic": features["traffic"],
@@ -228,12 +235,12 @@ def predict_fare(data: RideRequest, request: Request):
 
     rapido_price = float(rapido_model.predict(input_df_rapido)[0])
 
-    # -------- Uber --------
+    # UBER
     uber_vehicle = map_vehicle("uber", data.vehicle_type)
 
     input_df_uber = pd.DataFrame([{
-        "distance": data.distance,
-        "duration": data.duration,
+        "distance": features["distance"],
+        "duration": features["duration"],
         "vehicle_type": uber_vehicle,
         "weather": features["weather"],
         "traffic": features["traffic"],
